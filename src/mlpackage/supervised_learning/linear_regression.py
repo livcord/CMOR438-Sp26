@@ -49,8 +49,8 @@ class LinearRegression:
 
         if X.ndim != 2:
             raise ValueError("X must be 2D.")
-        if X.shape[0] != y.shape[0]:
-            raise ValueError("X and y must have the same number of samples.")
+        if X.shape[0] == 0:
+            raise ValueError("Cannot fit on empty dataset.")
 
         if self.method == "ols":
             self._fit_ols(X, y)
@@ -96,6 +96,8 @@ class LinearRegression:
         Returns
         np.ndarray of shape (n_samples,)
         """
+        if self.weights is None:
+            raise AttributeError("Model must be fitted before calling predict.")
         return self._linear(np.array(X, dtype=float))
 
     def _linear(self, X):
@@ -111,7 +113,7 @@ class LinearRegression:
         """Root Mean Squared Error."""
         return np.sqrt(self.mse(X, y))
 
-    def r_squared(self, X, y):
+    def R_squared(self, X, y):
         """
         Coefficient of determination R².
         R² = 1 means perfect fit; R² = 0 means the model is no better than

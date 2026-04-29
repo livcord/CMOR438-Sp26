@@ -76,7 +76,7 @@ class LogisticRegression:
         Return P(y=1 | X) for each sample.
         """
         if self.weights is None:
-            raise AttributeError("Model must be fitted before calling predict_proba.")
+            raise TypeError("Model must be fitted before calling predict_proba.")
 
         X = np.array(X, dtype=float)
 
@@ -103,7 +103,7 @@ class LogisticRegression:
         return np.mean(preds == y)
 
     # Internal helpers
-
+    @staticmethod
     def _sigmoid(z):
         """Numerically stable sigmoid."""
         return np.where(
@@ -112,6 +112,7 @@ class LogisticRegression:
             np.exp(z) / (1 + np.exp(z))
         )
 
+    @staticmethod
     def _binary_cross_entropy(y_true, y_prob):
         """Binary cross-entropy loss."""
         eps = 1e-15

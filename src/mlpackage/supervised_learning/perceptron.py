@@ -57,6 +57,11 @@ class Perceptron:
 
         if X.ndim != 2:
             raise ValueError("X must be a 2D array of shape (n_samples, n_features).")
+        if X.shape[0] != len(y):
+            raise ValueError(
+            "X and y must have the same number of samples,"
+            f"got X: {X.shape[0]}, y: {len(y)}."
+            )
         if len(np.unique(y)) > 2:
             raise ValueError("Perceptron only supports binary classification.")
 
