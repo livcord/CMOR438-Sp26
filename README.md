@@ -15,7 +15,6 @@ The repository is organized into:
 ## Repository Structure
 
 ```
-.
 ├── examples
 │   ├── supervised learning
 │   │   ├── Perceptron

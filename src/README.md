@@ -26,6 +26,7 @@ All models follow a consistent interface:
 ```python
 fit(X, y)
 predict(X)
+```
 
 ## Unsupervised models
 ```python
@@ -33,6 +34,7 @@ fit(X)
 predict(X) #if applicable
 transform(X) #for dimensionality reduction or clustering variants
 fit_transform(X)
+```
 
 ---
 # Module Overview
