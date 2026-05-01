@@ -143,5 +143,7 @@ pytest
 ## Author
 
 Livia Cordeiro
+
 Rice University
+
 Spring 2026
