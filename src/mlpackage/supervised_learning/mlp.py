@@ -194,6 +194,9 @@ class MLP:
             activations, Zs = self._forward(X)
             grads_w, grads_b = self._backward(activations, Zs, y)
 
+            grads_w = [np.clip(g, -5, 5) for g in grads_w]
+            grads_b = [np.clip(g, -5, 5) for g in grads_b]
+
             for i in range(len(self.weights)):
                 self.weights[i] -= self.lr * grads_w[i]
                 self.biases[i] -= self.lr * grads_b[i]
@@ -230,3 +233,9 @@ class MLP:
         """
         activations, _ = self._forward(X)
         return activations[-1]
+    
+    def score(self, X, y):
+        X = np.array(X, dtype=float)
+        y = np.array(y)
+        preds = self.predict(X)
+        return np.mean(preds == y)
