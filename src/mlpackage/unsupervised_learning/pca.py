@@ -18,9 +18,11 @@ class PCA:
             Number of principal components to retain.
         """
         self.n_components = n_components
-        self.components = None
-        self.mean = None
-        self.explained_variance = None
+
+        self.components_ = None
+        self.mean_ = None
+        self.explained_variance_ = None
+        self.explained_variance_ratio_ = None
 
     def fit(self, X):
         """
@@ -39,24 +41,29 @@ class PCA:
         Returns
         self
         """
-        # Center the data
-        self.mean = np.mean(X, axis=0)
-        X_centered = X - self.mean
+        X = np.array(X)
+
+        # Center data
+        self.mean_ = np.mean(X, axis=0)
+        X_centered = X - self.mean_
 
         # Covariance matrix
         cov_matrix = np.cov(X_centered, rowvar=False)
 
-        # Eigen decomposition
-        eigenvalues, eigenvectors = np.linalg.eig(cov_matrix)
+        # Eigen decomposition (stable for symmetric matrices)
+        eigenvalues, eigenvectors = np.linalg.eigh(cov_matrix)
 
-        # Sort by eigenvalue (descending order)
-        idxs = np.argsort(eigenvalues)[::-1]
-        eigenvalues = eigenvalues[idxs]
-        eigenvectors = eigenvectors[:, idxs]
+        # Sort eigenvalues descending
+        idx = np.argsort(eigenvalues)[::-1]
+        eigenvalues = eigenvalues[idx]
+        eigenvectors = eigenvectors[:, idx]
 
-        # Store top components
-        self.components = eigenvectors[:, :self.n_components]
-        self.explained_variance = eigenvalues[:self.n_components]
+        # Keep only top-k components
+        self.components_ = eigenvectors[:, :self.n_components]
+        self.explained_variance_ = eigenvalues[:self.n_components]
+
+        # Variance ratio
+        self.explained_variance_ratio_ = eigenvalues / np.sum(eigenvalues)
 
         return self
 
@@ -66,13 +73,15 @@ class PCA:
 
         Parameters
         X : np.ndarray of shape (n_samples, n_features)
+            Input data.
 
         Returns
         np.ndarray of shape (n_samples, n_components)
-            Transformed data in reduced dimensional space.
+            Transformed data in reduced-dimensional space.
         """
-        X_centered = X - self.mean
-        return np.dot(X_centered, self.components)
+        X = np.array(X)
+        X_centered = X - self.mean_
+        return np.dot(X_centered, self.components_)
 
     def fit_transform(self, X):
         """
@@ -80,10 +89,26 @@ class PCA:
 
         Parameters
         X : np.ndarray of shape (n_samples, n_features)
+            Input data.
 
         Returns
         np.ndarray
-            Reduced-dimension representation of X.
+            Reduced-dimensional representation of X.
         """
         self.fit(X)
         return self.transform(X)
+    
+    def inverse_transform(self, X):
+        """
+        Reconstruct data from its principal component representation.
+
+        Parameters
+        X : np.ndarray of shape (n_samples, n_components)
+            Data in reduced PCA space.
+
+        Returns
+        np.ndarray of shape (n_samples, n_features)
+            Reconstructed approximation of original data.
+        """
+        X = np.array(X)
+        return np.dot(X, self.components_.T) + self.mean_
