@@ -2,14 +2,14 @@ import numpy as np
 
 class MLP:
     """
-    Multilayer Perceptron (MLP) for binary classification.
+    Multilayer Perceptron (MLP) for multiclass classification.
 
     A fully connected feedforward neural network trained using
     backpropagation and gradient descent.
 
     Architecture:
         - Hidden layers: ReLU activation
-        - Output layer: Sigmoid activation (binary classification)
+        - Output layer: Softmax activation (multiclass classification)
 
     Parameters
     layer_sizes : list of int
@@ -26,6 +26,8 @@ class MLP:
         self.n_iters = n_iters
         self.weights = []
         self.biases = []
+
+        self.loss_history = []
 
         self._init_params()
 
@@ -61,22 +63,24 @@ class MLP:
         """
         return (Z > 0).astype(float)
 
+    def _softmax(self, Z):
+        """
+        Softmax activation function.
+
+        Maps a vector of logits to a probability distribution over classes.
+        Subtracts row-wise max for numerical stability before exponentiation.
+        """
+        e = np.exp(Z - np.max(Z, axis=1, keepdims=True))
+        return e / e.sum(axis=1, keepdims=True)
+
     def _sigmoid(self, Z):
         """
         Sigmoid activation function.
 
         Maps values to range (0, 1).
+        Retained for reference; no longer used in forward pass.
         """
         return 1 / (1 + np.exp(-Z))
-
-    def _sigmoid_derivative(self, A):
-        """
-        Derivative of sigmoid function.
-
-        Assumes input is activation A = sigmoid(Z).
-        """
-        return A * (1 - A)
-
 
     def _forward(self, X):
         """
@@ -101,36 +105,32 @@ class MLP:
             Zs.append(Z)
             activations.append(A)
 
-        # output layer
+        # Output layer: softmax produces a proper probability distribution over all classes, 
+        # unlike sigmoid which treats each output independently.
         Z = np.dot(A, self.weights[-1]) + self.biases[-1]
-        A = self._sigmoid(Z)
+        A = self._softmax(Z)  
 
         Zs.append(Z)
         activations.append(A)
 
         return activations, Zs
 
-
     def _compute_loss(self, y, y_pred):
         """
-        Compute binary cross-entropy loss.
+        Compute categorical cross-entropy loss.
 
         Parameters
-        y : np.ndarray
-            True labels.
-        y_pred : np.ndarray
-            Predicted probabilities.
+        y : np.ndarray of shape (n_samples, n_classes)
+            One-hot encoded true labels.
+        y_pred : np.ndarray of shape (n_samples, n_classes)
+            Predicted class probabilities from softmax.
 
         Returns
         float
             Loss value.
         """
         eps = 1e-8
-        return -np.mean(
-            y * np.log(y_pred + eps) +
-            (1 - y) * np.log(1 - y_pred + eps)
-        )
-
+        return -np.mean(np.sum(y * np.log(y_pred + eps), axis=1))
 
     def _backward(self, activations, Zs, y):
         """
@@ -142,7 +142,7 @@ class MLP:
         Zs : list of np.ndarray
             Linear outputs from forward pass.
         y : np.ndarray
-            True labels.
+            One-hot encoded true labels.
 
         Returns
         grads_w : list of np.ndarray
@@ -154,9 +154,11 @@ class MLP:
         grads_b = []
 
         m = y.shape[0]
-        y = y.reshape(-1, 1)
+        if y.ndim == 1:
+            y = y.reshape(-1, 1)
 
-        # output layer gradient
+        # Output layer gradient: dL/dZ = A - y
+        # This simplified form holds for both sigmoid+BCE and softmax+CCE, so the backward pass itself requires no changes.
         A_final = activations[-1]
         dZ = A_final - y
 
@@ -185,13 +187,16 @@ class MLP:
         X : np.ndarray
             Training features.
         y : np.ndarray
-            Training labels.
+            One-hot encoded training labels.
 
         Returns
         self
         """
         for _ in range(self.n_iters):
             activations, Zs = self._forward(X)
+            y_pred = activations[-1]
+            loss = self._compute_loss(y, y_pred)
+            self.loss_history.append(loss)
             grads_w, grads_b = self._backward(activations, Zs, y)
 
             grads_w = [np.clip(g, -5, 5) for g in grads_w]
@@ -207,18 +212,19 @@ class MLP:
 
     def predict(self, X):
         """
-        Predict binary class labels.
+        Predict class labels.
 
         Parameters
         X : np.ndarray
 
         Returns
-        np.ndarray
-            Predicted class labels (0 or 1).
+        np.ndarray of shape (n_samples,)
+            Predicted class indices (e.g. 0–9 for digit classification).
         """
+        # argmax picks the single highest-probability class per sample
         activations, _ = self._forward(X)
         probs = activations[-1]
-        return (probs > 0.5).astype(int)
+        return np.argmax(probs, axis=1)
 
     def predict_proba(self, X):
         """
@@ -228,14 +234,29 @@ class MLP:
         X : np.ndarray
 
         Returns
-        np.ndarray
-            Probability of class 1.
+        np.ndarray of shape (n_samples, n_classes)
+            Softmax probability distribution over classes.
         """
         activations, _ = self._forward(X)
         return activations[-1]
-    
+
     def score(self, X, y):
+        """
+        Compute classification accuracy.
+
+        Parameters
+        X : np.ndarray
+            Input features.
+        y : np.ndarray
+            True labels, either class indices or one-hot encoded.
+
+        Returns
+        float
+            Fraction of correctly classified samples.
+        """
         X = np.array(X, dtype=float)
         y = np.array(y)
+        if y.ndim > 1:
+            y = np.argmax(y, axis=1)
         preds = self.predict(X)
         return np.mean(preds == y)
