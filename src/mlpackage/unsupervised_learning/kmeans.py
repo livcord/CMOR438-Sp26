@@ -26,13 +26,19 @@ class kmeans:
         Index of the cluster each sample belongs to.
     """
 
-    def __init__(self, n_clusters=3, max_iters=100, tol=1e-4, random_state=42):
+    def __init__(self, n_clusters=3, max_iters=100, tol=1e-4, random_state=42, k=None):
+        if k is not None:
+            n_clusters = k
+        
         self.n_clusters = n_clusters
         self.max_iters = max_iters
         self.tol = tol
         self.random_state = random_state
-        self.centroids = None
+        self.centroids_ = None
         self.labels_ = None
+        self.inertia_ = None
+
+    
 
     def _init_centroids(self, X):
         """
@@ -123,21 +129,25 @@ class kmeans:
         None
             Fitted model stores results in `centroids` and `labels_`.
         """
-        self.centroids = self._init_centroids(X)
+        self.centroids_ = self._init_centroids(X)
 
         for _ in range(self.max_iters):
-            distances = self._compute_distances(X, self.centroids)
+            distances = self._compute_distances(X, self.centroids_)
             labels = self._assign_clusters(distances)
 
             new_centroids = self._update_centroids(X, labels)
 
-            shift = np.linalg.norm(self.centroids - new_centroids)
-            self.centroids = new_centroids
+            shift = np.linalg.norm(self.centroids_ - new_centroids)
+            self.centroids_ = new_centroids
 
             if shift < self.tol:
                 break
 
         self.labels_ = labels
+
+        self.inertia_ = np.sum(
+            (X - self.centroids_[self.labels_]) ** 2
+        )
 
     def predict(self, X):
         """
@@ -151,5 +161,5 @@ class kmeans:
         np.ndarray of shape (n_samples,)
             Index of the cluster each sample belongs to.
         """
-        distances = self._compute_distances(X, self.centroids)
+        distances = self._compute_distances(X, self.centroids_)
         return self._assign_clusters(distances)
