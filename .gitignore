@@ -1,21 +1,22 @@
-#Python
+# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
 dist/
 build/
 .eggs/
+smoke.py
 
-#Jupyter
+# Jupyter
 .ipynb_checkpoints/
 
-#Environments
+# Environments
 .venv/
 env/
 .env
 
-#macOS
+# macOS
 .DS_Store
 
-#VS Code
+# VS Code
 .vscode/
