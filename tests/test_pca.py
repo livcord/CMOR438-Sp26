@@ -24,7 +24,7 @@ def test_pca_variance_sorted():
     pca = PCA(n_components=3)
     pca.fit(X)
 
-    assert np.all(np.diff(pca.explained_variance) <= 0)
+    assert np.all(np.diff(pca.explained_variance_) <= 0)
 
 
 # Correctness & consistency 
@@ -82,7 +82,7 @@ def test_pca_components_orthogonality():
     pca = PCA(n_components=3)
     pca.fit(X)
 
-    components = pca.components
+    components = pca.components_
 
     # Dot product between different components should be ~0
     gram_matrix = components.T @ components
@@ -143,4 +143,4 @@ def test_pca_variance_non_negative():
     pca = PCA(n_components=3)
     pca.fit(X)
 
-    assert np.all(pca.explained_variance >= 0)
+    assert np.all(pca.explained_variance_ >= 0)

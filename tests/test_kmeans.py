@@ -25,7 +25,7 @@ def test_kmeans_centroids_shape():
     model = kmeans(n_clusters=3)
     model.fit(X)
 
-    assert model.centroids.shape == (3, 4)
+    assert model.centroids_.shape == (3, 4)
 
 
 def test_kmeans_predict_shape():
